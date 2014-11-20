@@ -36,5 +36,8 @@
     "package.json",
     "tests",
     "variables.md"
-  ]
+  ],
+  "devDependencies": {
+    "bootcamp": "~1.1.7"
+  }
 }
