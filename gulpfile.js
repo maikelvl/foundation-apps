@@ -14,7 +14,9 @@ var gulp           = require('gulp'),
     modRewrite     = require('connect-modrewrite'),
     dynamicRouting = require('./bin/gulp-dynamic-routing'),
     karma          = require('gulp-karma'),
-    rsync          = require('gulp-rsync');
+    rsync          = require('gulp-rsync'),
+    browserify     = require('browserify'),
+    source         = require('vinyl-source-stream');
 
 // Deploy
 gulp.task('deploy', ['build'], function() {
@@ -161,6 +163,34 @@ gulp.task('copy-templates', ['copy'], function() {
   ;
 });
 
+gulp.task('compile-ember-app', function() {
+
+    var options = {
+        input: './js/ember/app.js',
+        //extensions: ['.coffee', '.js'],
+        output: 'ember-app.js',
+        destination: './build/assets/js'
+    };
+
+    var bundler = browserify({
+        entries: options.input,
+        //extensions: options.extensions,
+        debug: true
+    });
+    //bundler.transform('browserify-shim');
+    return function() {
+        var startTime = new Date().getTime();
+        return bundler
+            .bundle()
+            .pipe(source(options.output))
+            .pipe(gulp.dest(options.destination))
+            .on('end', function() {
+                var time = (new Date().getTime() - startTime) / 1000;
+                return console.log("" + options.output.cyan + " was browserified: " + (time + 's').magenta);
+            });
+    }();
+});
+
 gulp.task('server:start', function() {
   connect.server({
     root: './build',
@@ -222,4 +252,7 @@ gulp.task('default', ['build', 'server:start'], function() {
 
   // Watch Angular templates
   gulp.watch(['./docs/templates/**/*.html'], ['copy-templates']);
+
+  // Watch Ember Javascript
+  gulp.watch('./js/ember/**/*', ['compile-ember-app']);
 });
